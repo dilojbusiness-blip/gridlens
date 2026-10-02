@@ -1,0 +1,4 @@
+id,customer,amount,status
+003,"Snow 雪",000.10,paid
+001,Aster Labs,2.00,pending
+004,Northstar,25.00,new

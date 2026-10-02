@@ -1,0 +1,161 @@
+{
+  "name": "gridlens",
+  "displayName": "GridLens - CSV Editor & XLSX Viewer",
+  "publisher": "dilojbusiness",
+  "version": "0.2.0",
+  "license": "MIT",
+  "pricing": "Free",
+  "repository": { "type": "git", "url": "https://github.com/dilojbusiness-blip/gridlens.git" },
+  "bugs": { "url": "https://github.com/dilojbusiness-blip/gridlens/issues" },
+  "homepage": "https://github.com/dilojbusiness-blip/gridlens#readme",
+  "description": "Offline keyed CSV comparison with duplicate-key checks, CSV/TSV editing, column summaries and read-only XLSX viewing.",
+  "engines": {
+    "vscode": "^1.90.0"
+  },
+  "categories": [
+    "Data Science",
+    "Visualization",
+    "Other"
+  ],
+  "keywords": [
+    "csv",
+    "xlsx",
+    "excel",
+    "tsv",
+    "spreadsheet",
+    "viewer",
+    "editor",
+    "grid",
+    "table",
+    "data",
+    "gridview",
+    "worksheet",
+    "rows",
+    "columns",
+    "sort",
+    "filter",
+    "csv editor",
+    "excel viewer",
+    "table editor",
+    "data grid"
+  ],
+  "icon": "media/gridlens.png",
+  "main": "./dist/extension.js",
+  "activationEvents": [],
+  "contributes": {
+    "commands": [
+      {
+        "command": "gridlens.open",
+        "title": "GridLens: Open as Grid"
+      },
+      {
+        "command": "gridlens.license.activate",
+        "title": "GridLens: Activate License"
+      },
+      {
+        "command": "gridlens.license.deactivate",
+        "title": "GridLens: Deactivate License"
+      },
+      {
+        "command": "gridlens.license.restore",
+        "title": "GridLens: Restore Existing Activation"
+      },
+      {
+        "command": "gridlens.license.forget",
+        "title": "GridLens: Remove Local Activation Only"
+      },
+      {
+        "command": "gridlens.license.status",
+        "title": "GridLens: License Status"
+      }
+    ],
+    "menus": {
+      "commandPalette": [
+        {
+          "command": "gridlens.license.activate",
+          "when": "false"
+        },
+        {
+          "command": "gridlens.license.deactivate",
+          "when": "false"
+        },
+        {
+          "command": "gridlens.license.restore",
+          "when": "false"
+        },
+        {
+          "command": "gridlens.license.forget",
+          "when": "false"
+        },
+        {
+          "command": "gridlens.license.status",
+          "when": "false"
+        }
+      ],
+      "explorer/context": [
+        {
+          "command": "gridlens.open",
+          "when": "resourceExtname =~ /\\.(csv|tsv|xlsx)/i",
+          "group": "navigation"
+        }
+      ],
+      "editor/title": [
+        {
+          "command": "gridlens.open",
+          "when": "resourceExtname =~ /\\.(csv|tsv|xlsx)/i",
+          "group": "navigation"
+        }
+      ]
+    },
+    "customEditors": [
+      {
+        "viewType": "gridlens.csvGrid",
+        "displayName": "GridLens Grid",
+        "selector": [
+          {
+            "filenamePattern": "*.csv"
+          },
+          {
+            "filenamePattern": "*.tsv"
+          }
+        ],
+        "priority": "option"
+      },
+      {
+        "viewType": "gridlens.xlsxGrid",
+        "displayName": "GridLens Spreadsheet (read-only)",
+        "selector": [
+          {
+            "filenamePattern": "*.xlsx"
+          }
+        ],
+        "priority": "option"
+      }
+    ]
+  },
+  "scripts": {
+    "vscode:prepublish": "node esbuild.js --production",
+    "compile": "node esbuild.js",
+    "watch": "node esbuild.js --watch",
+    "check": "tsc --noEmit",
+    "test": "node esbuild.js && node --test tests/*.test.cjs",
+    "icon": "node scripts/gen-icon.js"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "@types/vscode": "1.90.0",
+    "@vscode/vsce": "^3.6.0",
+    "esbuild": "^0.25.0",
+    "jsdom": "^26.1.0",
+    "playwright-core": "^1.58.2",
+    "typescript": "^5.7.0"
+  },
+  "dependencies": {
+    "exceljs": "^4.4.0"
+  },
+  "overrides": {
+    "exceljs": {
+      "uuid": "^11.1.1"
+    }
+  }
+}

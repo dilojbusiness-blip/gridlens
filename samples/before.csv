@@ -1,0 +1,4 @@
+id,customer,amount,status
+001,Aster Labs,02.00,pending
+002,Mira Studio,100.00,paid
+003,"Snow 雪",000.10,pending

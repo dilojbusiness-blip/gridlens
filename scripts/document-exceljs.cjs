@@ -1,0 +1,1 @@
+module.exports = { Workbook: require('../node_modules/exceljs/lib/doc/workbook.js') };
