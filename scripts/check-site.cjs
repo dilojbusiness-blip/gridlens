@@ -1,0 +1,46 @@
+const {spawnSync} = require('node:child_process');
+const path = require('node:path');
+const fs = require('node:fs/promises');
+const assert = require('node:assert/strict');
+const {chromium} = require('playwright-core');
+const root=path.resolve(__dirname,'..');
+(async()=>{
+  const build=spawnSync(process.execPath,[path.join(root,'scripts/build-site.cjs')],{cwd:root,encoding:'utf8'});
+  if(build.status!==0)throw new Error('Demo worker build failed');
+  const output='D:/VSCodeData/Temp/gridlens-site-check'; await fs.mkdir(output,{recursive:true});
+  const browser=await chromium.launch({executablePath:'C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe',headless:true});
+  try {
+    const page=await browser.newPage({viewport:{width:1280,height:900}});
+    const errors=[],outbound=[];
+    page.on('pageerror',e=>errors.push(e.message));
+    page.on('request',r=>{if(!r.url().startsWith('http://127.0.0.1:8892/'))outbound.push(r.url());});
+    await page.goto('http://127.0.0.1:8892/docs/compare-csv-by-key.html');
+    await page.getByRole('button',{name:'Load sample',exact:true}).click();
+    await page.getByRole('button',{name:'Compare',exact:true}).click();
+    await page.waitForFunction(()=>document.querySelector('#status').textContent.includes('Comparison complete'));
+    assert.ok((await page.locator('#results').innerText()).includes('2 changed'));
+    assert.ok((await page.locator('#results').innerText()).includes('02.00'));
+    await page.screenshot({path:path.join(output,'desktop.png')});
+    await page.getByRole('button',{name:'Load duplicate-key sample',exact:true}).click();
+    await page.getByRole('button',{name:'Compare',exact:true}).click();
+    await page.waitForFunction(()=>document.querySelector('#status').textContent.includes('Key issues'));
+    await page.locator('#left-csv').fill('id,v\n001');
+    await page.getByRole('button',{name:'Compare',exact:true}).click();
+    await page.waitForFunction(()=>document.querySelector('#status').textContent.includes('Structural issues'));
+    await page.locator('#left-csv').fill('id,v\n001,<img src=x onerror=alert(1)>');
+    await page.locator('#right-csv').fill('id,v\n001,safe');
+    await page.getByRole('button',{name:'Compare',exact:true}).click();
+    await page.waitForFunction(()=>document.querySelector('#status').textContent.includes('Comparison complete'));
+    assert.equal(await page.locator('#results img').count(),0);
+    await page.getByRole('button',{name:'Clear data',exact:true}).click();
+    assert.equal(await page.locator('#left-csv').inputValue(),'');
+    assert.equal(await page.locator('#right-csv').inputValue(),'');
+    await page.setViewportSize({width:390,height:844});
+    await page.goto('http://127.0.0.1:8892/docs/');
+    assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);
+    await page.screenshot({path:path.join(output,'mobile.png')});
+    assert.deepEqual(errors,[]); assert.deepEqual(outbound,[]);
+    const result={passed:true,checked:new Date().toISOString(),checks:['sample comparison','duplicate blocking','ragged diagnostics','XSS literal rendering','clear input','mobile overflow','no outbound demo requests'],scope:'Real installed Edge against local documentation site; no customer data, traffic or conversion claims.'};
+    await fs.writeFile(path.join(output,'result.json'),JSON.stringify(result,null,2));console.log(JSON.stringify(result,null,2));
+  }finally{await browser.close();}
+})().catch(e=>{console.error(e.message);process.exitCode=1;});

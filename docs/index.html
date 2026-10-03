@@ -1,0 +1,127 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self'; worker-src 'self'; connect-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'">
+<title>Compare CSV files by key | GridLens open-source demo</title>
+<link rel="canonical" href="https://dilojbusiness-blip.github.io/gridlens/">
+<meta name="description" content="Compare two CSV files by a key column, not row position. Free open-source browser demo for GridLens, a VS Code extension. No upload, nothing leaves your browser.">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<a class="skip-link" href="#main">Skip to main content</a>
+<header class="site-header">
+  <div class="nav-wrap">
+    <a class="wordmark" href="index.html">Grid<span>Lens</span></a>
+    <nav class="site-nav" aria-label="Primary">
+      <ul>
+        <li><a href="compare-csv-by-key.html">Compare demo</a></li>
+        <li><a href="https://marketplace.visualstudio.com/items?itemName=dilojbusiness.gridlens">Marketplace</a></li>
+        <li><a href="https://github.com/dilojbusiness-blip/gridlens">Source</a></li>
+      </ul>
+    </nav>
+  </div>
+</header>
+<main id="main">
+  <section class="hero">
+    <h1>Compare records. Not row positions.</h1>
+    <p class="lede">GridLens is a free, open-source VS Code extension for keyed CSV comparison, duplicate-key checks, CSV/TSV editing and read-only XLSX viewing. This site hosts documentation and a smaller in-browser demo of the compare feature.</p>
+    <div class="button-row">
+      <a class="btn btn-primary" href="https://marketplace.visualstudio.com/items?itemName=dilojbusiness.gridlens">Install from Marketplace</a>
+      <a class="btn btn-secondary" href="https://github.com/dilojbusiness-blip/gridlens">View source (MIT)</a>
+      <a class="btn btn-secondary" href="compare-csv-by-key.html">Try the demo</a>
+    </div>
+  </section>
+
+  <section>
+    <h2>Why keyed comparison</h2>
+    <p>A text diff preserves line order and often shows moved records as insertions and deletions. That can make a reordered CSV export noisy to review. GridLens matches parsed records by a chosen key instead, while reporting literal field changes.</p>
+    <p><a href="#tutorial">Read: Why a line diff struggles with reordered CSV rows</a></p>
+  </section>
+
+  <section>
+    <h2>Demo vs. full extension limits</h2>
+    <p>The linked demo runs comparison locally in a Web Worker, with smaller limits than the VS Code extension. Performance still depends on your device and input.</p>
+    <div class="card-grid">
+      <div class="card">
+        <h3>Browser demo (this page)</h3>
+        <table class="limits-table">
+          <caption>Demo limits</caption>
+          <tbody>
+            <tr><th scope="row">File size</th><td>1&nbsp;MiB each</td></tr>
+            <tr><th scope="row">Rows</th><td>10,000</td></tr>
+            <tr><th scope="row">Columns</th><td>100</td></tr>
+            <tr><th scope="row">Cells</th><td>100,000</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="card">
+        <h3>Full VS Code extension</h3>
+        <table class="limits-table">
+          <caption>Extension limits</caption>
+          <tbody>
+            <tr><th scope="row">File size</th><td>50&nbsp;MiB each</td></tr>
+            <tr><th scope="row">Rows</th><td>100,001</td></tr>
+            <tr><th scope="row">Columns</th><td>512</td></tr>
+            <tr><th scope="row">Cells</th><td>1,000,000</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Known alternatives</h2>
+    <p>Other VS Code extensions handle CSV/spreadsheet viewing and editing, including Edit CSV and Spreadsheet Viewer. GridLens focuses specifically on keyed row comparison and duplicate-key detection as a free, offline tool.</p>
+  </section>
+
+  <section id="tutorial" class="tutorial-body">
+    <h2>Why a line diff struggles with reordered CSV rows</h2>
+    <p>Text diff algorithms align similar lines while preserving their sequence. A moved CSV record can appear as a deletion and insertion; it is not necessarily paired with its matching identifier. CSV records can also span several physical lines when a quoted field contains a newline. A database export without explicit ordering or a re-sorted spreadsheet can shuffle records without changing their field values. Matching parsed records by a unique identifier makes those movements easier to separate from actual field changes.</p>
+
+    <h3>A synthetic example</h3>
+    <p>These two synthetic files contain the same products and values in a different order:</p>
+    <pre>left.csv
+id,name,price
+id001,Widget,1
+id002,Gadget,2.00
+
+right.csv
+id,name,price
+id002,Gadget,2.00
+id001,Widget,1</pre>
+    <p>A text diff can report moved lines as deletions and additions. A keyed comparison matches <code>id001</code> with <code>id001</code> and <code>id002</code> with <code>id002</code>, then reports zero field differences for this pair.</p>
+
+    <h3>Values that look equal but are not, or vice versa</h3>
+    <p>GridLens compares decoded field strings. Identifier <code>001</code> differs from <code>1</code>, and amount <code>02.00</code> differs from <code>2.00</code>. This can reveal formatting differences between systems, but may also be stricter than a numeric reconciliation needs. Quoting alone is not a field-value difference: <code>"text"</code> and <code>text</code> decode to the same value. Numeric tolerance is not implemented; normalize a separate copy deliberately if that is required.</p>
+
+    <h3>Duplicate keys are refused, not guessed</h3>
+    <p>Keyed comparison depends on each key value appearing once per file. If <code>id001</code> appears twice in the same file, there is no single correct way to decide which occurrence to match against the other file. Rather than pick one arbitrarily, or silently merge them, GridLens refuses to compare and reports the duplicate so you can fix the source data. This demo page reports duplicate keys only within the sample limits listed above; the full extension applies the same rule at its own, larger limits.</p>
+
+    <h3>Explicit headers, not guessed columns</h3>
+    <p>Enable header mode only if both first records contain column names. In this mode, fields match by exact unique header names, so column order may differ. Both files need the same header names. Without header mode, fields match by position and both schemas need the same width. Choose the key column independently in each file using a one-based number. Blank or duplicate keys block matching; repeated IDs are never silently fixed.</p>
+
+    <h3>Snapshot vs. full extension</h3>
+    <p>This page is a snapshot of one feature at reduced limits, meant to show the approach quickly in a browser. It is not a replacement for the VS Code extension, which handles far larger files, more columns, the same duplicate-key and literal-value rules, plus CSV/TSV editing, column summaries and read-only XLSX viewing.</p>
+  </section>
+</main>
+<footer class="site-footer">
+  <div class="footer-wrap">
+    <div>
+      <h3>Data & privacy</h3>
+      <p>The demo has no input storage, telemetry or upload code. Clear data removes inputs and results from the page; it does not guarantee erasure from browser memory. Browsers may restore form text or retain session data; avoid sensitive data on shared devices.</p>
+    </div>
+    <div>
+      <h3>Limitations</h3>
+      <p>This is a reduced-limit demo of one feature. Duplicate checks inspect every accepted record; only displayed issue samples are capped. Use the extension for larger files and other tools.</p>
+    </div>
+    <div>
+      <h3>License & links</h3>
+      <p>MIT licensed, free, version 0.2.1 on the Marketplace, no paid tier enabled.</p>
+      <p><a href="https://github.com/dilojbusiness-blip/gridlens">Source</a> &middot; <a href="https://github.com/dilojbusiness-blip/gridlens/issues">Report an issue</a></p>
+    </div>
+  </div>
+</footer>
+</body>
+</html>

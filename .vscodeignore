@@ -9,6 +9,8 @@ dist/test-analysis.js
 dist/test-license-commands.js
 dist/build-meta.json
 dist/pro/**
+dist/demoWorker.js
+docs/**
 dist/*.map
 tsconfig*.json
 esbuild.js

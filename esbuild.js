@@ -13,6 +13,7 @@ const path = require('node:path');
     await esbuild.build({ entryPoints: ['src/licenseCommands.ts'], bundle: true, platform: 'node', external: ['vscode'], outfile: 'dist/test-license-commands.js' });
   }
   if (!process.argv.includes('--production')) {
+    await esbuild.build({ entryPoints: ['src/demoWorker.ts'], bundle: true, platform: 'node', outfile: 'dist/demoWorker.js' });
     await esbuild.build({ entryPoints: ['src/pro/analytics.ts', 'src/pro/export.ts', 'src/pro/license.ts', 'src/pro/licenseClient.ts', 'src/pro/reconcile.ts', 'src/pro/preflight.ts'], bundle: true, platform: 'node', alias, outdir: 'dist/pro', legalComments: 'eof' });
   }
   require('./scripts/notices.js');

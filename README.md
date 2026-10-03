@@ -19,6 +19,8 @@ These images show the same interface in a synthetic local preview. File selectio
 
 ## Getting started
 
+Try the [local-processing browser demo and documentation](https://dilojbusiness-blip.github.io/gridlens/compare-csv-by-key.html). It uses the same open-source comparison engine at smaller limits; it is not an online storefront or paid service.
+
 Right-click a CSV, TSV or XLSX file → **GridLens: Open as Grid**. Alternatively, use **Reopen Editor With…** from the editor tab. GridLens does not replace your default editor automatically.
 
 ### Compare two snapshots

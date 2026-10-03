@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self'; worker-src 'self'; connect-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'">
+<title>Compare CSV files by key | GridLens open-source demo</title>
+<link rel="canonical" href="https://dilojbusiness-blip.github.io/gridlens/compare-csv-by-key.html">
+<meta name="description" content="Compare two CSV files by a key column, not row position. Free open-source browser demo for GridLens, a VS Code extension. No upload, nothing leaves your browser.">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<a class="skip-link" href="#main">Skip to main content</a>
+<header class="site-header">
+  <div class="nav-wrap">
+    <a class="wordmark" href="index.html">Grid<span>Lens</span></a>
+    <nav class="site-nav" aria-label="Primary">
+      <ul>
+        <li><a href="index.html">Docs</a></li>
+        <li><a href="https://marketplace.visualstudio.com/items?itemName=dilojbusiness.gridlens">Marketplace</a></li>
+        <li><a href="https://github.com/dilojbusiness-blip/gridlens">Source</a></li>
+      </ul>
+    </nav>
+  </div>
+</header>
+<main id="main">
+  <section class="hero">
+    <h1>Compare CSV files by key</h1>
+    <p class="lede">Paste two CSVs, pick a key column for each, and compare records regardless of row order. Runs entirely in this browser tab using a Web Worker.</p>
+  </section>
+
+  <div class="warning-box">
+    Don't paste sensitive data on a shared computer. Pasted text stays in this browser tab's memory; it is not persisted or uploaded, and there is no tracking.
+  </div>
+
+  <section>
+    <h2>Demo limits</h2>
+    <table class="limits-table">
+      <caption>This browser demo (smaller than the full extension)</caption>
+      <tbody>
+        <tr><th scope="row">File size</th><td>1&nbsp;MiB each</td></tr>
+        <tr><th scope="row">Rows</th><td>10,000</td></tr>
+        <tr><th scope="row">Columns</th><td>100</td></tr>
+        <tr><th scope="row">Cells</th><td>100,000</td></tr>
+      </tbody>
+    </table>
+    <p class="field-hint">The full VS Code extension supports 50&nbsp;MiB per file, up to 100,001 rows, 512 columns and 1,000,000 cells. <a href="https://marketplace.visualstudio.com/items?itemName=dilojbusiness.gridlens">Install it</a> for larger files.</p>
+  </section>
+
+  <form id="compare-form" autocomplete="off">
+    <div class="form-grid">
+      <div class="card">
+        <label for="left-csv">Left CSV</label>
+        <textarea id="left-csv" name="left-csv" spellcheck="false" rows="10" aria-describedby="left-csv-hint" maxlength="1048576"></textarea>
+        <p id="left-csv-hint" class="field-hint">Paste CSV text. Enable header mode only if the first record has column names.</p>
+      </div>
+      <div class="card">
+        <label for="right-csv">Right CSV</label>
+        <textarea id="right-csv" name="right-csv" spellcheck="false" rows="10" aria-describedby="right-csv-hint" maxlength="1048576"></textarea>
+        <p id="right-csv-hint" class="field-hint">Paste CSV text with the same schema as the left input.</p>
+      </div>
+    </div>
+
+    <div class="checkbox-row">
+      <input type="checkbox" id="headers" name="headers" checked>
+      <label for="headers">First row is a header row</label>
+    </div>
+
+    <div class="form-grid">
+      <div>
+        <label for="left-key">Left key column</label>
+        <input type="number" id="left-key" name="left-key" min="1" max="100" value="1" required>
+      </div>
+      <div>
+        <label for="right-key">Right key column</label>
+        <input type="number" id="right-key" name="right-key" min="1" max="100" value="1" required>
+      </div>
+    </div>
+
+    <div class="toolbar">
+      <button type="button" id="load-sample" class="btn btn-secondary">Load sample</button>
+      <button type="button" id="duplicate-sample" class="btn btn-secondary">Load duplicate-key sample</button>
+      <button type="submit" id="compare" class="btn btn-primary">Compare</button>
+      <button type="button" id="clear-data" class="btn btn-secondary">Clear data</button>
+    </div>
+  </form>
+
+  <p id="status" role="status" aria-live="polite"></p>
+  <noscript>This local comparison demo needs JavaScript. The documentation and extension installation links remain available.</noscript>
+
+  <section>
+    <h2 id="results-heading">Results</h2>
+    <div id="results" tabindex="-1" aria-labelledby="results-heading"></div>
+  </section>
+
+  <p><a href="index.html#tutorial">Why a line diff struggles with reordered CSV rows</a></p>
+</main>
+<footer class="site-footer">
+  <div class="footer-wrap">
+    <div>
+      <h3>Data & privacy</h3>
+      <p>Comparison runs locally in a Web Worker. Nothing is uploaded, sent to a server, or tracked.</p>
+      <p>There is no application input storage. Use Clear data before leaving; browser session/form restoration is outside our control.</p>
+    </div>
+    <div>
+      <h3>Limitations</h3>
+      <p>Sample-size demo only; duplicate keys are reported, not auto-fixed. Use the extension for full limits.</p>
+    </div>
+    <div>
+      <h3>License & links</h3>
+      <p>MIT licensed, free, version 0.2.1, no paid tier enabled.</p>
+      <p><a href="https://github.com/dilojbusiness-blip/gridlens">Source</a> &middot; <a href="https://github.com/dilojbusiness-blip/gridlens/issues">Report an issue</a></p>
+    </div>
+  </div>
+</footer>
+<script src="demo.js" defer></script>
+</body>
+</html>

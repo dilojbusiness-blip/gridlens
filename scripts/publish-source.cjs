@@ -21,7 +21,7 @@ try {
     const text = fs.readFileSync(path.join(root, name), 'utf8');
     if (/\b(?:ghp_|gho_|sk_live_)[a-z0-9]{15,}|BEGIN [A-Z ]*PRIVATE KEY|DD21@ford\.com|@wipro\.com/i.test(text)) throw new Error('Potential credential or corporate identity in staging.');
   }
-  if (names.length) git(['commit', '-m', 'Add free CSV structure checks and isolated test-license validation']);
+  if (names.length) git(['commit', '-m', 'Add local-only CSV comparison demo and open-source documentation']);
   git(['-c', 'credential.helper=', '-c', 'credential.helper=manager', '-c', 'credential.username=dilojbusiness-blip', '-c', 'credential.interactive=false', 'push', 'origin', 'main']);
   console.log(JSON.stringify({ published: true, commit: git(['rev-parse', '--short', 'HEAD']), files: names.length, repository: 'https://github.com/dilojbusiness-blip/gridlens', identity: 'personal business' }, null, 2));
 } catch (error) { console.error(error.message); process.exitCode = 1; }

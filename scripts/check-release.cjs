@@ -9,12 +9,14 @@ fs.mkdirSync(directory, { recursive: true });
 const env = { ...process.env, TEMP: 'D:\\VSCodeData\\Temp', TMP: 'D:\\VSCodeData\\Temp', npm_config_cache: 'D:\\VSCodeData\\Temp\\npm-cache' };
 env.PATH = `${path.dirname(process.execPath)};${env.PATH}`;
 const result = { date: new Date().toISOString(), passed: false, steps: [] };
+const version = JSON.parse(fs.readFileSync(path.join(root, 'package.json'), 'utf8')).version;
+const candidate = path.join(directory, `gridlens-${version}-candidate.vsix`);
 try {
   for (const [name, args] of [
     ['TypeScript', ['node_modules/typescript/bin/tsc', '--noEmit']],
     ['Test build', ['esbuild.js']],
     ['Tests', ['--test', ...fs.readdirSync(path.join(root, 'tests')).filter(f => f.endsWith('.test.cjs')).map(f => `tests/${f}`)]],
-    ['Package', ['node_modules/@vscode/vsce/vsce', 'package', '--no-dependencies']],
+    ['Package', ['node_modules/@vscode/vsce/vsce', 'package', '--no-dependencies', '--out', candidate]],
   ]) {
     const run = spawnSync(process.execPath, args, { cwd: root, env, encoding: 'utf8', maxBuffer: 1024 * 1024 });
     fs.writeFileSync(path.join(directory, `${name.replaceAll(' ', '-')}.log`), `${run.stdout || ''}\n${run.stderr || ''}`);
@@ -22,8 +24,7 @@ try {
     result.steps.push({ name, exit: run.status });
     if (run.status !== 0) throw new Error(`${name} failed; see the local D: log.`);
   }
-  const version = JSON.parse(fs.readFileSync(path.join(root, 'package.json'), 'utf8')).version;
-  const artifact = path.join(root, `gridlens-${version}.vsix`);
+  const artifact = candidate;
   const data = fs.readFileSync(artifact);
   result.artifact = artifact;
   result.size = data.length;
