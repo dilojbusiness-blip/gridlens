@@ -35,15 +35,31 @@
         status.textContent = 'Key issues found. Matching was not attempted.';
       } else {
         const c = report.counts;
-        add('h3', `${c.same} same · ${c.changed} changed · ${c.added} added · ${c.removed} removed`);
+        const heading = add('h3', `${c.same} same · ${c.changed} changed · ${c.added} added · ${c.removed} removed`);
+        heading.className = 'visually-hidden';
+        const metrics = add('div', ''); metrics.className = 'result-metrics';
+        for (const type of ['same', 'changed', 'added', 'removed']) {
+          const metric = add('div', '', metrics); metric.className = 'metric-' + type;
+          add('strong', String(c[type]), metric); add('span', type, metric);
+        }
         const list = add('ul', '');
+        list.className = 'change-list';
         for (const change of report.changes) {
-          const item = add('li', `${change.type}: key ${change.key}`, list);
+          const item = add('li', '', list);
+          const label = add('div', '', item); label.className = 'change-label';
+          const badge = add('span', change.type, label); badge.className = 'change-badge badge-' + change.type;
+          add('code', `key ${change.key}`, label);
           if (change.type === 'changed') {
             const fields = add('ul', '', item);
-            for (const d of change.deltas) add('li', `${d.column}: “${d.leftValue}” → “${d.rightValue}”`, fields);
+            for (const d of change.deltas) {
+              const field = add('li', '', fields);
+              add('span', d.column, field);
+              const values = add('div', '', field); values.className = 'delta-values';
+              add('del', d.leftValue, values); add('span', '→', values); add('ins', d.rightValue, values);
+            }
           }
         }
+        if (!report.changes.length) add('p', 'No field differences found. All matched records have identical literal values.');
         if (report.truncated) add('p', 'Showing at most 100 difference samples, including added and removed records. Total counts include all records.');
         status.textContent = 'Comparison complete. Source data remains unchanged.';
       }
