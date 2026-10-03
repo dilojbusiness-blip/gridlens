@@ -5,14 +5,17 @@ import { summarizeColumn, ColumnSummary } from './pro/analytics';
 import { exportValues } from './pro/export';
 import { LicenseClient } from './pro/licenseClient';
 import { PRODUCT } from './product';
+import { ProductIdentity } from './pro/license';
+import { inspectTable, PreflightReport } from './pro/preflight';
 
-type Report = ReconcileReport | ColumnSummary;
+type StructuralReport = { tables: (PreflightReport & { side: string })[]; scope: string };
+type Report = ReconcileReport | ColumnSummary | StructuralReport;
 type AnalysisUI = Pick<typeof vscode.window, 'showOpenDialog' | 'showQuickPick' | 'showSaveDialog'>;
 export class AnalysisController {
   private report: { version: number; title: string; data: Report; sources: string[] } | undefined;
   private busy = false;
   private disposed = false;
-  constructor(private readonly document: vscode.TextDocument, private readonly webview: vscode.Webview, private readonly delimiter: () => string | undefined, private readonly license: LicenseClient, private readonly ui: AnalysisUI = vscode.window) {}
+  constructor(private readonly document: vscode.TextDocument, private readonly webview: vscode.Webview, private readonly delimiter: () => string | undefined, private readonly license: LicenseClient, private readonly ui: AnalysisUI = vscode.window, private readonly product: ProductIdentity | null = PRODUCT) {}
   dispose(): void { this.disposed = true; this.report = undefined; }
   private current(version: unknown): number {
     if (this.disposed || version !== this.document.version || this.document.isClosed) throw new Error('Document changed or editor closed. Run analysis again.');
@@ -27,7 +30,9 @@ export class AnalysisController {
       const parsed = parse(this.document.getText(), this.delimiter());
       const rows = parsed.rows.map(row => row.cells.map(cell => cell.text));
       const dataRows = message.header ? rows.slice(1) : rows;
-      if (message.type === 'summary') {
+      if (message.type === 'preflight') {
+        this.present(version, 'CSV preflight', { tables: [{ side: 'Current CSV', ...inspectTable(rows, { header: message.header as boolean }) }], scope: 'Full current in-editor data. No values are modified or uploaded.' }, [this.document.uri.toString()]);
+      } else if (message.type === 'summary') {
         if (typeof message.column !== 'number') throw new Error('Select a column first.');
         const width = rows.reduce((n, row) => Math.max(n, row.length), 0);
         if (!Number.isInteger(message.column) || message.column < 0 || message.column >= width) throw new Error('Column is outside this table.');
@@ -44,6 +49,12 @@ export class AnalysisController {
         let text: string;
         try { text = new TextDecoder('utf-8', { fatal: true }).decode(bytes); } catch { throw new Error('Comparison requires UTF-8 CSV/TSV; convert the file encoding first.'); }
         const other = parse(text, file.path.toLowerCase().endsWith('.tsv') ? '\t' : undefined).rows.map(row => row.cells.map(cell => cell.text));
+        const tables = [{ side: 'Current CSV', ...inspectTable(rows, { header: message.header as boolean }) }, { side: 'Comparison CSV', ...inspectTable(other, { header: message.header as boolean }) }];
+        if (tables.some(table => table.blocked)) {
+          this.current(version);
+          this.present(version, 'CSV preflight', { tables, scope: 'Comparison stopped before key matching. Full current text and saved UTF-8 comparison snapshot; no automatic repair.' }, [this.document.uri.toString(), file.toString()]);
+          return;
+        }
         const selectKey = async (table: string[][], side: string) => {
           const columns = table[0] ?? [];
           const choice = await this.ui.showQuickPick(columns.map((value, index) => ({ label: `${index + 1}: ${message.header ? value : 'Column ' + (index + 1)}`, index })), { title: `${side} key column`, placeHolder: 'Choose a unique, nonblank identifier. 001 and 1 are different.' });
@@ -55,7 +66,7 @@ export class AnalysisController {
         const result = reconcileRows(rows, other, { leftKeyColumn: left, rightKeyColumn: right, header: message.header as boolean, maxChanges: 1000 });
         this.present(version, 'Keyed CSV comparison', result, [this.document.uri.toString(), file.toString()]);
       } else if (message.type === 'exportXlsx') {
-        if (!PRODUCT) throw new Error('Paid export is not available yet. No license key was sent.');
+        if (!this.product) throw new Error('Paid export is not available yet. No license key was sent.');
         if (!(await this.license.validate()).allowed) throw new Error('A valid license is needed for XLSX export. Activate it using GridLens license commands.');
         this.current(version);
         const output = await exportValues(rows);

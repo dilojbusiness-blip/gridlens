@@ -10,9 +10,10 @@ const path = require('node:path');
   if (process.argv.includes('--host-tests')) {
     await esbuild.build({ entryPoints: ['src/providers/csvEditor.ts'], bundle: true, platform: 'node', external: ['vscode'], outfile: 'dist/test-provider.js' });
     await esbuild.build({ entryPoints: ['src/analysis.ts'], bundle: true, platform: 'node', alias, external: ['vscode'], outfile: 'dist/test-analysis.js' });
+    await esbuild.build({ entryPoints: ['src/licenseCommands.ts'], bundle: true, platform: 'node', external: ['vscode'], outfile: 'dist/test-license-commands.js' });
   }
   if (!process.argv.includes('--production')) {
-    await esbuild.build({ entryPoints: ['src/pro/analytics.ts', 'src/pro/export.ts', 'src/pro/license.ts', 'src/pro/licenseClient.ts', 'src/pro/reconcile.ts'], bundle: true, platform: 'node', alias, outdir: 'dist/pro', legalComments: 'eof' });
+    await esbuild.build({ entryPoints: ['src/pro/analytics.ts', 'src/pro/export.ts', 'src/pro/license.ts', 'src/pro/licenseClient.ts', 'src/pro/reconcile.ts', 'src/pro/preflight.ts'], bundle: true, platform: 'node', alias, outdir: 'dist/pro', legalComments: 'eof' });
   }
   require('./scripts/notices.js');
 })().catch(e => { console.error(e); process.exitCode = 1; });

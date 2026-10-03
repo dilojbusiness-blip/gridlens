@@ -2,7 +2,7 @@
   "name": "gridlens",
   "displayName": "GridLens - CSV Editor & XLSX Viewer",
   "publisher": "dilojbusiness",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "license": "MIT",
   "pricing": "Free",
   "repository": { "type": "git", "url": "https://github.com/dilojbusiness-blip/gridlens.git" },

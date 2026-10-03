@@ -1,0 +1,1 @@
+exports.activate = context => ({ secrets: context.secrets, context });

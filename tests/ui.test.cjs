@@ -215,3 +215,58 @@ test('Free analysis is available without paid export; summary requires selection
   assert.equal(h.sent.at(-1).type,'ready');
   assert.equal(h.query('[role=status]').textContent.includes('Select a cell'),true);
 });
+
+test('Check structure posts a preflight message with version and header flag', t => {
+  const h = harness(t); h.receive({ analysisAvailable: true });
+  h.query('input[type=checkbox]').checked = true;
+  findButton(h, 'Check structure').click();
+  const message = h.sent.at(-1);
+  assert.equal(message.type, 'preflight'); assert.equal(message.version, 1); assert.equal(message.header, true);
+});
+
+test('CSV preflight report renders row/column widths and untrusted text safely via textContent', t => {
+  const h = harness(t); h.receive({ paidAvailable: true });
+  findButton(h, 'Check structure').click();
+  h.w.dispatchEvent(new h.w.MessageEvent('message', {
+    data: { type: 'analysis', version: 1, title: 'CSV preflight', report: {
+      scope: '<img onerror=bad>',
+      tables: [{
+        side: 'Current CSV', blocked: true, rows: 5, columns: 3, totalIssues: 2, truncated: false,
+        issues: [
+          { code: 'ragged-row', rowIndex: 2, expectedColumns: 3, actualColumns: 2 },
+          { code: 'blank-header', columnIndex: 1 },
+        ],
+      }],
+    } },
+    source: null,
+  }));
+  assert.equal(h.query('dialog.report').open, true);
+  assert.equal(h.query('dialog.report img'), null);
+  const text = h.query('dialog.report').textContent;
+  assert.ok(text.includes('Rows'));
+  assert.ok(text.includes('row 3'));
+  assert.ok(text.includes('expected 3 columns, found 2'));
+  assert.ok(text.includes('column B'));
+  assert.ok(text.includes('Nothing is modified, repaired, or uploaded'));
+  assert.ok(text.includes('<img onerror=bad>'));
+});
+
+test('Check structure button is hidden unless analysis/paid is available and disabled when read-only', t => {
+  const h = harness(t); h.receive();
+  assert.equal(findButton(h, 'Check structure').hidden, true);
+  h.receive({ analysisAvailable: true, readonly: true });
+  assert.equal(findButton(h, 'Check structure').hidden, false);
+  assert.equal(findButton(h, 'Check structure').disabled, true);
+  h.receive({ analysisAvailable: true, readonly: false });
+  assert.equal(findButton(h, 'Check structure').disabled, false);
+});
+
+test('Stale preflight reply for a changed version is rejected without showing a report', t => {
+  const h = harness(t); h.receive({ analysisAvailable: true });
+  findButton(h, 'Check structure').click();
+  h.receive({ analysisAvailable: true, version: 2 });
+  h.w.dispatchEvent(new h.w.MessageEvent('message', { data: { type: 'analysis', version: 1, title: 'CSV preflight', report: { tables: [] } }, source: null }));
+  assert.equal(h.query('dialog.report').open, false);
+  assert.equal(h.query('[role=status]').textContent, 'Document changed. Run analysis again.');
+  assert.equal(findButton(h, 'Check structure').disabled, false);
+});

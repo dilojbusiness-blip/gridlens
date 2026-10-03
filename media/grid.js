@@ -20,9 +20,10 @@
   const remove = make('button', 'Delete row');
   const compareBtn = make('button', 'Compare CSV');
   const summaryBtn = make('button', 'Column summary');
+  const checkBtn = make('button', 'Check structure');
   const exportBtn = make('button', 'Export XLSX');
   const reload = make('button', 'Reload');
-  bar.append(label, filter, headerLabel, sheet, add, remove, compareBtn, summaryBtn, exportBtn, reload);
+  bar.append(label, filter, headerLabel, sheet, add, remove, compareBtn, summaryBtn, checkBtn, exportBtn, reload);
   const hint = make('p', 'Sort and filter change the view, not the file. Double-click a cell to edit.', 'hint');
   const viewport = make('div', undefined, 'viewport'); viewport.tabIndex = 0; viewport.setAttribute('aria-label', 'Spreadsheet');
   const canvas = make('div', undefined, 'canvas'); canvas.setAttribute('role', 'grid'); viewport.append(canvas);
@@ -57,9 +58,9 @@
     remove.disabled = pending || errored || !selected;
     commit.disabled = pending || errored;
     const analysisAllowed = (analysisAvailable || paidAvailable) && !data.readonly;
-    compareBtn.hidden = summaryBtn.hidden = !(analysisAvailable || paidAvailable);
+    compareBtn.hidden = summaryBtn.hidden = checkBtn.hidden = !(analysisAvailable || paidAvailable);
     exportBtn.hidden = !paidAvailable;
-    compareBtn.disabled = summaryBtn.disabled = pending || errored || analysisPending || !analysisAllowed;
+    compareBtn.disabled = summaryBtn.disabled = checkBtn.disabled = pending || errored || analysisPending || !analysisAllowed;
     exportBtn.disabled = pending || errored || analysisPending || !paidAvailable;
   };
   const rebuild = () => {
@@ -186,7 +187,7 @@
   function startAnalysis(trigger, message) {
     if (analysisPending || pending || errored || !(analysisAvailable || paidAvailable) || data.readonly) return;
     analysisPending = true; analysisTrigger = trigger; controls();
-    status.textContent = trigger === 'compare' ? 'Comparing…' : trigger === 'summary' ? 'Summarizing…' : 'Exporting…';
+    status.textContent = trigger === 'compare' ? 'Comparing…' : trigger === 'summary' ? 'Summarizing…' : trigger === 'preflight' ? 'Checking structure…' : 'Exporting…';
     post({ ...message, version: data.version });
   }
   compareBtn.addEventListener('click', () => startAnalysis('compare', { type: 'compare', header: headers.checked }));
@@ -194,6 +195,7 @@
     if (!selected) { status.textContent = 'Select a cell in the column to summarize first.'; return; }
     startAnalysis('summary', { type: 'summary', column: selected.column, header: headers.checked });
   });
+  checkBtn.addEventListener('click', () => startAnalysis('preflight', { type: 'preflight', header: headers.checked }));
   exportBtn.addEventListener('click', () => startAnalysis('exportXlsx', { type: 'exportXlsx', header: headers.checked }));
 
   const closeAnalysis = () => { analysisDialog.close(); focusAfterAnalysis(); };
@@ -278,6 +280,44 @@
     }
     analysisBody.replaceChildren(body);
   }
+  function describePreflightIssue(issue) {
+    const row = Number.isInteger(issue.rowIndex) ? `row ${issue.rowIndex + 1}` : '';
+    const column = Number.isInteger(issue.columnIndex) ? `column ${columnName(issue.columnIndex)}` : '';
+    const where = [row, column].filter(Boolean).join(', ');
+    switch (issue.code) {
+      case 'ragged-row':
+        return `Ragged row at ${where}: expected ${issue.expectedColumns} columns, found ${issue.actualColumns}.`;
+      case 'blank-header':
+        return `Blank header at ${where}.`;
+      case 'duplicate-header':
+        return `Duplicate header at ${where}.`;
+      case 'missing-header':
+        return `Missing header at ${where}.`;
+      default:
+        return `${issue.code} at ${where}`;
+    }
+  }
+  function renderPreflight(report) {
+    analysisTitle.textContent = 'CSV preflight';
+    const body = make('div');
+    body.append(make('p', 'Structural check reads your data locally. Nothing is modified, repaired, or uploaded.'));
+    if (report.scope) body.append(make('p', `Scope: ${report.scope}`));
+    for (const table of report.tables || []) {
+      body.append(make('h3', table.side));
+      const list = make('dl');
+      dl(list, 'Rows', String(table.rows));
+      dl(list, 'Columns', String(table.columns));
+      dl(list, 'Total issues', String(table.totalIssues));
+      body.append(list);
+      if (table.blocked) body.append(make('p', 'Blocked: structural issues found before comparing rows.'));
+      const issueList = make('ul');
+      const issues = table.issues || [];
+      for (const issue of issues.slice(0, 20)) issueList.append(make('li', describePreflightIssue(issue)));
+      body.append(issueList);
+      if (table.truncated || issues.length > 20) body.append(make('p', 'Showing the first 20 issues only.'));
+    }
+    analysisBody.replaceChildren(body);
+  }
 
   sheet.addEventListener('change', () => { selected = null; viewport.scrollTop = 0; pending = true; controls(); status.textContent = 'Loading worksheet…'; post({ type: 'sheet', sheet: Number(sheet.value) }); });
   filter.addEventListener('input', () => { clearTimeout(filterTimer); filterTimer = setTimeout(() => { viewport.scrollTop = 0; rebuild(); }, 200); });
@@ -291,7 +331,8 @@
       if (message.version !== data.version) { analysisPending = false; analysisTrigger = null; status.textContent = 'Document changed. Run analysis again.'; controls(); return; }
       analysisPending = false; controls();
       if (message.title === 'Column summary') renderSummary(message.report);
-      else renderCompare(message.report);
+      else if (message.title === 'CSV preflight') renderPreflight(message.report);
+      else if (message.title === 'Keyed CSV comparison') renderCompare(message.report);
       analysisReturnFocus = document.activeElement;
       if (!analysisDialog.open) analysisDialog.showModal();
       status.textContent = 'Analysis ready.';

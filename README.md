@@ -9,6 +9,7 @@ Compare CSV/TSV snapshots by a unique key, edit delimited files as a grid, and b
 - Match columns by exact header name when header mode is enabled; column order may differ.
 - Inspect column statistics and save a JSON report, without rewriting either comparison source.
 - All current CSV editing, comparison, and summary features are free. There is no active paid checkout.
+- **Check structure** reports uneven rows and blank/duplicate/missing headers by source row/column, with no automatic padding or repair.
 
 ![GridLens CSV grid using synthetic data](media/demo/grid.png)
 
@@ -29,6 +30,10 @@ Right-click a CSV, TSV or XLSX file → **GridLens: Open as Grid**. Alternativel
 
 The current file uses its in-editor text; the second file is read from its saved UTF-8 disk snapshot. Comparison and summaries include the full source data, not just the sorted/filtered display. Tables must be rectangular. In header mode, schemas need the same exact, nonblank, unique names. Neither file is merged or automatically repaired.
 
+### Check structure before matching
+
+Enable **First row is header** only if the first record contains column names, then click **Check structure**. Reports show expected versus actual column counts and header issues. Comparisons automatically run this check before asking for key columns. Diagnostics contain row/column positions, not cell values; up to 100 issues per table are saved, and up to 20 are shown. Fix the source deliberately rather than assuming missing fields should be padded.
+
 - CSV/TSV: double-click a cell or press Enter to edit. Enter applies; Shift+Enter inserts a newline. Save and undo use VS Code's document system.
 - Add a blank row or delete a selected source row.
 - Filter rows, sort column views, and optionally treat the first row as a header. These operations change the display, not the underlying order in the file.
@@ -46,7 +51,7 @@ CSV limits: 50 MiB of decoded text, 100,001 rows, 512 columns, one million cells
 
 XLSX limits: 10 MiB compressed, 30 MiB unpacked, 10 MiB per ZIP entry, 100 sheets and one million cells. Some valid complex workbooks may exceed these safety limits. Encrypted, ZIP64 and split archives are unsupported. Charts, formatting and merge layout are not rendered. Dates use ISO text. Formulas are not calculated; cached values are displayed, or the formula when a cached result is absent. Close and reopen after external workbook changes.
 
-**v0.2 is free. No Pro product or checkout is available yet.** Prepared paid-export and license foundations are not enabled. XLSX editing, calculations, automatic merging, and full comparison exports beyond the sample limit are not included.
+**v0.2.1 is free. No live Pro product or checkout is available.** Internal test checkout/licensing has been exercised, but prepared paid-export and license foundations remain disabled in the public release. XLSX editing, calculations, automatic merging, and full comparison exports beyond the sample limit are not included.
 
 ## Support
 

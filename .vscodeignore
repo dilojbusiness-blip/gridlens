@@ -6,6 +6,7 @@ dist/csv.js
 dist/xlsx.js
 dist/test-provider.js
 dist/test-analysis.js
+dist/test-license-commands.js
 dist/build-meta.json
 dist/pro/**
 dist/*.map

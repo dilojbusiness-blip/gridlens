@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.2.1
+
+- Free local structure preflight with row-width and blank/duplicate/missing-header diagnostics before reconciliation.
+- Key-column prompts are skipped when structural errors would make matching ambiguous.
+- Reproducible isolated secure-storage and internal test-license export harnesses, excluded from the extension package.
+- Existing free features unchanged; paid activation and live checkout remain disabled.
+
 ## 0.2.0
 
 - Free keyed CSV comparison with exact strings, reordered-row matching, duplicate/blank-key blocking, and sampled JSON reports.

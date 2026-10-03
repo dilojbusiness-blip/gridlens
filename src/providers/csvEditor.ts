@@ -29,7 +29,7 @@ export class CsvEditorProvider implements vscode.CustomTextEditorProvider {
     const received = webview.onDidReceiveMessage(async message => {
       if (!message || typeof message !== 'object' || disposed) return;
       if (message.type === 'ready') { update(); return; }
-      if (['compare', 'summary', 'exportXlsx', 'saveReport'].includes(message.type)) { await analysis.handle(message); return; }
+      if (['preflight', 'compare', 'summary', 'exportXlsx', 'saveReport'].includes(message.type)) { await analysis.handle(message); return; }
       if (!['edit', 'addRow', 'deleteRow'].includes(message.type)) return;
       if (editing || message.version !== document.version) { error(new Error('Document changed. Reload the grid before editing.')); return; }
       editing = true;

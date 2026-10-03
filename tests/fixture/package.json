@@ -1,0 +1,9 @@
+{
+  "name": "gridlens-test-harness",
+  "displayName": "GridLens isolated test harness",
+  "publisher": "dilotools-tests",
+  "version": "0.0.0",
+  "engines": { "vscode": "^1.90.0" },
+  "activationEvents": [],
+  "main": "./extension.cjs"
+}

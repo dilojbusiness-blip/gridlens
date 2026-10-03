@@ -72,6 +72,14 @@ async function runTests() {
     const analysis=new AnalysisController(document,webview,()=>',',{validate:async()=>{throw new Error('Unconfigured export must never check license');}},ui);
     await analysis.handle({type:'summary',version:document.version,column:1,header:true});
     assert.equal(messages.at(-1).report.sum,1);
+    await analysis.handle({type:'preflight',version:document.version,header:true});
+    assert.equal(messages.at(-1).title,'CSV preflight');
+    assert.equal(messages.at(-1).report.tables[0].blocked,false);
+    await fs.writeFile(second.fsPath,'Name,Value\r\nragged\r\n');
+    await analysis.handle({type:'compare',version:document.version,header:true});
+    assert.equal(messages.at(-1).title,'CSV preflight');
+    assert.equal(messages.at(-1).report.tables[1].issues[0].code,'ragged-row');
+    await fs.writeFile(second.fsPath,'Name,Value\r\nNew,005\r\n"雪,edited",002\r\n');
     await analysis.handle({type:'compare',version:document.version,header:true});
     assert.deepEqual(messages.at(-1).report.counts,{same:0,changed:1,added:1,removed:0});
     await analysis.handle({type:'saveReport',version:document.version});

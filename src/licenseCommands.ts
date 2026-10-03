@@ -1,6 +1,7 @@
 import * as vscode from 'vscode';
 import { LicenseClient, ClientResult } from './pro/licenseClient';
 import { PRODUCT } from './product';
+import { ProductIdentity } from './pro/license';
 
 const explain = (result: ClientResult): string => result.allowed ? 'License active on this device.' : {
   configuration: 'Paid activation is not available in this release. No key was sent.',
@@ -13,13 +14,13 @@ const explain = (result: ClientResult): string => result.allowed ? 'License acti
   storage: 'VS Code secret storage is unavailable. Please unlock it and retry.',
 }[result.reason];
 
-export function registerLicenseCommands(context: vscode.ExtensionContext): LicenseClient {
-  const client = new LicenseClient(PRODUCT, context.secrets);
+export function registerLicenseCommands(context: vscode.ExtensionContext, product: ProductIdentity | null = PRODUCT, prefix = 'gridlens.license'): LicenseClient {
+  const client = new LicenseClient(product, context.secrets);
   const run = async (action: 'activate' | 'deactivate' | 'restore' | 'forget' | 'status') => {
-    if (!PRODUCT && action !== 'forget') { void vscode.window.showInformationMessage(explain({ allowed: false, reason: 'configuration' })); return; }
+    if (!product && action !== 'forget') { void vscode.window.showInformationMessage(explain({ allowed: false, reason: 'configuration' })); return; }
     let result: ClientResult;
     if (action === 'activate' || action === 'restore') {
-      const key = await vscode.window.showInputBox({ title: 'GridLens license', prompt: 'Enter your purchased license key. Sent only to Lemon Squeezy for activation/validation.', password: true, ignoreFocusOut: true });
+      const key = await vscode.window.showInputBox({ title: prefix.startsWith('gridlens.test') ? 'GridLens INTERNAL TEST license' : 'GridLens license', prompt: 'Enter the license key directly here. Sent only to Lemon Squeezy for activation/validation.', password: true, ignoreFocusOut: true });
       if (!key) return;
       if (action === 'restore') {
         const id = await vscode.window.showInputBox({ title: 'Restore GridLens activation', prompt: 'Enter the existing instance ID from your legitimate activation backup or support. This does not create a new slot.', password: true, ignoreFocusOut: true });
@@ -34,7 +35,7 @@ export function registerLicenseCommands(context: vscode.ExtensionContext): Licen
     void vscode.window.showInformationMessage(explain(result));
   };
   for (const action of ['activate', 'deactivate', 'restore', 'forget', 'status'] as const) {
-    context.subscriptions.push(vscode.commands.registerCommand(`gridlens.license.${action}`, () => run(action)));
+    context.subscriptions.push(vscode.commands.registerCommand(`${prefix}.${action}`, () => run(action)));
   }
   return client;
 }
